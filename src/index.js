@@ -1,11 +1,20 @@
+/*
+ * @Author: zhangmingyuan 2369558390@qq.com
+ * @Date: 2025-07-12 14:04:32
+ * @LastEditors: zhangmingyuan 2369558390@qq.com
+ * @LastEditTime: 2025-07-12 14:04:34
+ * @FilePath: /testing-langchainjs/src/index.js
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 import { OllamaEmbeddings } from "@langchain/ollama";
 import { Ollama } from "@langchain/ollama";
 import { MemoryVectorStore } from "langchain/vectorstores/memory";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { RunnablePassthrough, RunnableSequence } from "@langchain/core/runnables";
-import {StringOutputParser} from '@langchain/core/output_parsers';
-import {TextLoader} from 'langchain/document_loaders/fs/text';
-import {CharacterTextSplitter} from '@langchain/textsplitters';
+import { StringOutputParser } from '@langchain/core/output_parsers';
+import { TextLoader } from 'langchain/document_loaders/fs/text';
+import { CharacterTextSplitter } from '@langchain/textsplitters';
+import readline from 'readline';
 
 // 1. 嵌入模型
 const embed_model = new OllamaEmbeddings({ model: "mxbai-embed-large" });
@@ -13,12 +22,12 @@ const embed_model = new OllamaEmbeddings({ model: "mxbai-embed-large" });
 // 2. 构建向量数据库
 const loader = new TextLoader("./src/sources/txt/situ-profile.txt");
 const docs = await loader.load();
-const splitter = new CharacterTextSplitter({        
-  chunkSize: 500,       // 减小每块最大字符数
-  chunkOverlap: 50,     // 减小块与块之间重叠字符数
+
+const splitter = new CharacterTextSplitter({
+  chunkSize: 500,
+  chunkOverlap: 50,
 });
 const chunks = await splitter.splitDocuments(docs);
-
 
 const vector_store = await MemoryVectorStore.fromTexts(
   chunks.map(chunk => chunk.pageContent),
@@ -54,6 +63,45 @@ const chain = RunnableSequence.from([
   new StringOutputParser()
 ]);
 
-// 6. 执行链
-const result = await chain.invoke("who is situ yongcong");
-console.log(result);
+// 6. 创建命令行接口
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+console.log("🤖 LangChain.js + Ollama Q&A System");
+console.log("💡 Type your question and press Enter (type 'quit' to exit)");
+console.log("📚 Available context: Situ Yongcong's profile");
+console.log("=" .repeat(50));
+
+// 7. 交互式问答循环
+async function askQuestion() {
+  rl.question('\n❓ Your question: ', async (input) => {
+    if (input.toLowerCase() === 'quit' || input.toLowerCase() === 'exit') {
+      console.log('\n👋 Goodbye!');
+      rl.close();
+      return;
+    }
+
+    if (input.trim() === '') {
+      console.log('⚠️  Please enter a question.');
+      askQuestion();
+      return;
+    }
+
+    try {
+      console.log('\n🤔 Thinking...');
+      const result = await chain.invoke(input);
+      console.log('\n🤖 Answer:');
+      console.log(result);
+    } catch (error) {
+      console.error('\n❌ Error:', error.message);
+    }
+
+    // 继续下一轮问答
+    askQuestion();
+  });
+}
+
+// 8. 启动交互式问答
+askQuestion();

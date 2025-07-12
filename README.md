@@ -9,6 +9,7 @@ A local intelligent question-answering system based on LangChain.js and Ollama, 
 -   **Modern Architecture**: Built with LangChain Expression Language (LCEL)
 -   **Chinese Support**: Fully supports Chinese Q&A
 -   **Flexible Configuration**: Customizable retrieval parameters and model settings
+-   **Interactive CLI**: Command-line interface with conversation history and commands
 
 ## 📋 System Requirements
 
@@ -56,6 +57,13 @@ ollama serve
 node src/index.js
 ```
 
+### Interactive mode (Recommended)
+
+```bash
+# Run the advanced interactive system
+node src/interactive-chat.js
+```
+
 ### Custom questions
 
 Modify the question in `src/index.js`:
@@ -73,12 +81,58 @@ const result = await chain.invoke('Your question');
 const loader = new TextLoader('./src/sources/txt/your-file.txt');
 ```
 
+## 🎮 Interactive Commands
+
+When using the interactive mode (`src/interactive-chat.js`), you can use these commands:
+
+-   `/help` - Show available commands
+-   `/history` - Show conversation history
+-   `/clear` - Clear conversation history
+-   `/status` - Show system status
+-   `/quit` or `/exit` - Exit the program
+
+### Example Interactive Session
+
+```
+🤖 Interactive Q&A System
+💡 Type your question or use commands (type /help for commands)
+📚 Available context: Situ Yongcong's profile
+============================================================
+
+❓ Your question: What is Situ Yongcong's expertise?
+
+🤔 Thinking...
+
+🤖 Answer:
+根据文档，司徒永聪的技术专长包括：
+
+1. 系统运维（System Operations）
+2. 前端开发（Front-end Development）
+3. QNAP NAS 调优
+4. 自动化脚本开发
+5. 硬件诊断
+
+他专注于技术实践，擅长从搭建博客到故障诊断，再到自动化脚本的各种技术领域。
+
+--- 喵
+
+❓ Your question: /history
+
+📝 Conversation History:
+==================================================
+
+1. Q: What is Situ Yongcong's expertise?
+   A: 根据文档，司徒永聪的技术专长包括：1. 系统运维（System Operations）2. 前端开发（Front-end Development）...
+   Time: 2025/7/12 15:30:45
+```
+
 ## 📁 Project Structure
 
 ```
 testing-langchainjs/
 ├── src/
 │   ├── index.js              # Main program entry
+│   ├── interactive-chat.js   # Advanced interactive system
 │   ├── text-split.js         # Text splitting module
 │   ├── embedding.js          # Vectorization module
 │   ├── retrival-qa-chain.js  # Retrieval Q&A chain
@@ -182,6 +236,10 @@ Relevant documents:
 Please answer in Chinese and add "--- Meow" at the end of your answer.
 `);
 ```
+
+### 4. Conversation history
+
+The interactive system maintains conversation history and includes it in context for better continuity.
 
 ## 🐛 Common Issues
 
