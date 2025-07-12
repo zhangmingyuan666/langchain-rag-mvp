@@ -10,6 +10,7 @@ A local intelligent question-answering system based on LangChain.js and Ollama, 
 -   **Chinese Support**: Fully supports Chinese Q&A
 -   **Flexible Configuration**: Customizable retrieval parameters and model settings
 -   **Interactive CLI**: Command-line interface with conversation history and commands
+-   **Enhanced Context Awareness**: Advanced conversation continuity and context management
 
 ## 📋 System Requirements
 
@@ -64,6 +65,13 @@ node src/index.js
 node src/interactive-chat.js
 ```
 
+### Enhanced context mode (Best experience)
+
+```bash
+# Run the enhanced context-aware system
+node src/enhanced-context-chat.js
+```
+
 ### Custom questions
 
 Modify the question in `src/index.js`:
@@ -83,7 +91,7 @@ const loader = new TextLoader('./src/sources/txt/your-file.txt');
 
 ## 🎮 Interactive Commands
 
-When using the interactive mode (`src/interactive-chat.js`), you can use these commands:
+### Basic Commands (all modes)
 
 -   `/help` - Show available commands
 -   `/history` - Show conversation history
@@ -91,17 +99,23 @@ When using the interactive mode (`src/interactive-chat.js`), you can use these c
 -   `/status` - Show system status
 -   `/quit` or `/exit` - Exit the program
 
-### Example Interactive Session
+### Enhanced Commands (enhanced-context-chat.js only)
+
+-   `/context` - Show current context summary
+-   `/turn` - Show current conversation turn
+
+### Example Enhanced Interactive Session
 
 ```
-🤖 Interactive Q&A System
+🤖 Enhanced Context Q&A System
 💡 Type your question or use commands (type /help for commands)
 📚 Available context: Situ Yongcong's profile
-============================================================
+🧠 Enhanced context awareness enabled
+======================================================================
 
 ❓ Your question: What is Situ Yongcong's expertise?
 
-🤔 Thinking...
+🤔 Thinking... (Turn 1)
 
 🤖 Answer:
 根据文档，司徒永聪的技术专长包括：
@@ -116,14 +130,35 @@ When using the interactive mode (`src/interactive-chat.js`), you can use these c
 
 --- 喵
 
-❓ Your question: /history
+❓ Your question: Tell me more about his blog
 
-📝 Conversation History:
-==================================================
+🤔 Thinking... (Turn 2)
 
-1. Q: What is Situ Yongcong's expertise?
-   A: 根据文档，司徒永聪的技术专长包括：1. 系统运维（System Operations）2. 前端开发（Front-end Development）...
-   Time: 2025/7/12 15:30:45
+🤖 Answer:
+基于我们刚才关于司徒永聪技术专长的讨论，让我详细介绍一下他的博客：
+
+司徒永聪经营个人博客 situ2001.com/blog，内容涵盖多个领域：
+- 系统运维
+- 前端开发
+- 自动化脚本
+- 硬件诊断
+- 生产力工具
+- 学习成长
+- 旅行见闻
+
+他通过博客分享技术实践与生活体验，体现了"动手且深入"的技术态度。
+
+--- 喵
+
+❓ Your question: /context
+
+🧠 Current Context Summary:
+========================================
+Recent conversation focused on: technical expertise discussion, blog and online presence. We've discussed 2 topics so far.
+
+📊 Conversation Statistics:
+   Total turns: 2
+   History entries: 2
 ```
 
 ## 📁 Project Structure
@@ -133,6 +168,7 @@ testing-langchainjs/
 ├── src/
 │   ├── index.js              # Main program entry
 │   ├── interactive-chat.js   # Advanced interactive system
+│   ├── enhanced-context-chat.js # Enhanced context-aware system
 │   ├── text-split.js         # Text splitting module
 │   ├── embedding.js          # Vectorization module
 │   ├── retrival-qa-chain.js  # Retrieval Q&A chain
@@ -174,6 +210,61 @@ const llm = new Ollama({
     baseUrl: 'http://127.0.0.1:11434',
     temperature: 0,
 });
+```
+
+## 🧠 Enhanced Context Features
+
+### 1. Context Summary
+
+The enhanced system automatically generates context summaries based on conversation topics:
+
+-   Technical expertise discussions
+-   Blog and online presence
+-   Projects and work experience
+-   Personal life and travel
+-   General information
+
+### 2. Conversation Turn Tracking
+
+-   Each question is numbered as a "turn"
+-   System maintains awareness of conversation progression
+-   Better continuity between related questions
+
+### 3. Extended History
+
+-   Keeps last 8 conversation turns (vs 5 in basic version)
+-   Includes turn numbers for better reference
+-   Automatic context summary updates
+
+### 4. Smart Prompt Engineering
+
+```js
+const prompt = PromptTemplate.fromTemplate(`
+You are a helpful AI assistant with excellent memory and context awareness. You should maintain conversation continuity and build upon previous exchanges.
+
+=== CONVERSATION CONTEXT ===
+{context_summary}
+
+=== PREVIOUS CONVERSATION ===
+{history}
+
+=== CURRENT SITUATION ===
+- Turn: {turn}
+- User's current question: {question}
+
+=== RELEVANT DOCUMENTS ===
+{docs}
+
+=== INSTRUCTIONS ===
+1. Answer the current question based on the provided documents
+2. Consider the conversation history and context summary
+3. If the question references previous topics, acknowledge and build upon them
+4. If this is a follow-up question, reference the previous context appropriately
+5. Maintain a conversational tone
+6. Answer in Chinese and add "--- 喵" at the end
+
+=== YOUR RESPONSE ===
+`);
 ```
 
 ## 🆚 LCEL vs Traditional Approach
@@ -241,6 +332,15 @@ Please answer in Chinese and add "--- Meow" at the end of your answer.
 
 The interactive system maintains conversation history and includes it in context for better continuity.
 
+### 5. Context-aware responses
+
+The enhanced system can:
+
+-   Reference previous conversations
+-   Build upon earlier topics
+-   Maintain conversation flow
+-   Provide more coherent multi-turn interactions
+
 ## 🐛 Common Issues
 
 ### Q: Encounter "model not found" error?
@@ -289,18 +389,19 @@ vector_store.asRetriever({
 
 ## 📊 Performance Optimization Tips
 
-1. **Document chunking**: Reasonably set `chunkSize` and `chunkOverlap`
-2. **Retrieval quantity**: Adjust `k` value according to needs
-3. **Model selection**: Choose appropriate models based on hardware configuration
-4. **Caching mechanism**: Consider adding vector caching to improve performance
+1.  **Document chunking**: Reasonably set `chunkSize` and `chunkOverlap`
+2.  **Retrieval quantity**: Adjust `k` value according to needs
+3.  **Model selection**: Choose appropriate models based on hardware configuration
+4.  **Caching mechanism**: Consider adding vector caching to improve performance
+5.  **Context management**: Use enhanced context mode for better conversation flow
 
 ## 🤝 Contributing
 
-1. Fork the project
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+1.  Fork the project
+2.  Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
 
 ## 📄 License
 
