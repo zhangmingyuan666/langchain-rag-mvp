@@ -43,7 +43,10 @@ please answer in Chinese, an concat a "\n --- 喵" in the end of the answer.
 // 5. LCEL Chain
 const chain = RunnableSequence.from([
   {
-    docs: vector_store.asRetriever(),
+    docs: vector_store.asRetriever({
+      k: 3, // 只返回相似度最高的前3个文档
+      searchType: "similarity" // 使用相似度搜索
+    }),
     question: new RunnablePassthrough()
   },
   SOME_PROMPT,
