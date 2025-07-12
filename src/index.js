@@ -1,38 +1,56 @@
-/*
- * @Author: zhangmingyuan 2369558390@qq.com
- * @Date: 2025-07-12 14:04:32
- * @LastEditors: zhangmingyuan 2369558390@qq.com
- * @LastEditTime: 2025-07-12 14:04:34
- * @FilePath: /testing-langchainjs/src/index.js
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
+import { OllamaEmbeddings } from "@langchain/ollama";
 import { Ollama } from "@langchain/ollama";
-import {initEmbedding} from './embedding.js';
-import {splitTextToChunk} from './text-split.js';
-import {createRetrivalQaChain} from './retrival-qa-chain.js';
+import { MemoryVectorStore } from "langchain/vectorstores/memory";
+import { PromptTemplate } from "@langchain/core/prompts";
+import { RunnablePassthrough, RunnableSequence } from "@langchain/core/runnables";
+import {StringOutputParser} from '@langchain/core/output_parsers';
+import {TextLoader} from 'langchain/document_loaders/fs/text';
+import {CharacterTextSplitter} from '@langchain/textsplitters';
 
-export const query = "司徒永聪是谁"
+// 1. 嵌入模型
+const embed_model = new OllamaEmbeddings({ model: "mxbai-embed-large" });
 
-async function main() {
-  // 1. 加载和拆分文档
-  const textChunks = await splitTextToChunk();
+// 2. 构建向量数据库
+const loader = new TextLoader("./src/sources/txt/situ-profile.txt");
+const docs = await loader.load();
+const splitter = new CharacterTextSplitter({        
+  chunkSize: 500,       // 减小每块最大字符数
+  chunkOverlap: 50,     // 减小块与块之间重叠字符数
+});
+const chunks = await splitter.splitDocuments(docs);
 
-  console.log('chunk 切割成功', textChunks)
 
-  // 2. 把 chunk 转化为向量
-  const vectorStore = await initEmbedding(textChunks);
-  console.log('向量转化成功', vectorStore)
+const vector_store = await MemoryVectorStore.fromTexts(
+  chunks.map(chunk => chunk.pageContent),
+  chunks.map(chunk => chunk.metadata), // metadata
+  embed_model
+);
 
-  // 3. 初始化大模型，并设置检索链
-  const llm = new Ollama({
-    model: "llama3",      // 使用已安装的模型名称
-    temperature: 0,
-    baseUrl: "http://127.0.0.1:11434", // 使用 IPv4 地址
-  });
-  console.log('大模型初始化成功', llm)
-  // 4. 执行检索链
-  const answer = await createRetrivalQaChain(llm, vectorStore, query);
-  console.log(answer);
-}
+// 3. LLM
+const llm = new Ollama({
+  model: "llama3",
+  baseUrl: "http://127.0.0.1:11434"
+});
 
-main()
+// 4. Prompt
+const SOME_PROMPT = PromptTemplate.fromTemplate(`
+Answer the following question: {question}
+using the given context:
+{docs}
+please answer in Chinese, an concat a "\n --- 喵" in the end of the answer.
+`);
+
+// 5. LCEL Chain
+const chain = RunnableSequence.from([
+  {
+    docs: vector_store.asRetriever(),
+    question: new RunnablePassthrough()
+  },
+  SOME_PROMPT,
+  llm,
+  new StringOutputParser()
+]);
+
+// 6. 执行链
+const result = await chain.invoke("who is situ yongcong");
+console.log(result);

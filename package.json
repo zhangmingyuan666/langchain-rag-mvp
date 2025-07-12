@@ -4,6 +4,7 @@
     "@langchain/core": "^0.3.62",
     "@langchain/ollama": "^0.2.3",
     "@langchain/textsplitters": "^0.1.0",
-    "langchain": "^0.3.29"
+    "langchain": "^0.3.29",
+    "chromadb": "^1.8.1"
   }
 }
